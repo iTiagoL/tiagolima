@@ -5,10 +5,8 @@
 </head>
 <body>
     <h1>Denodo Metadata Report</h1>
-    <form method="post">
-        <label>Host: <input type="text" name="host" required></label><br>
-        <label>User: <input type="text" name="user" required></label><br>
-        <label>Password: <input type="password" name="password" required></label><br>
+    <form method="post" enctype="multipart/form-data">
+        <label>Configuration File: <input type="file" name="metadata_file" required></label><br>
         <button type="submit">Generate Report</button>
     </form>
 </body>

@@ -1,23 +1,39 @@
 import os
+import re
 from typing import List, Dict
 
-import requests
 from docx import Document
 
 
-def fetch_denodo_metadata(host: str, username: str, password: str) -> List[Dict[str, str]]:
-    """Fetch metadata information from Denodo.
+def fetch_denodo_metadata(config_file: str) -> List[Dict[str, str]]:
+    """Parse a configuration file and extract metadata information.
 
-    This function uses a simplified example of calling a Denodo REST API.
-    In a real scenario, you would adjust the endpoints and authentication
-    method according to your Denodo installation.
+    Currently, this function only extracts the configured heap memory amount.
+    Extend the parsing logic as needed for other metrics.
     """
-    # Placeholder implementation -- replace with actual API calls
-    # For demonstration, return sample metadata
-    return [
-        {"database": "example_db", "view": "customer", "description": "Customer data"},
-        {"database": "example_db", "view": "orders", "description": "Orders data"},
-    ]
+    metadata: List[Dict[str, str]] = []
+
+    with open(config_file, 'r', encoding='utf-8', errors='ignore') as f:
+        content = f.read()
+
+    heap_value = None
+
+    # Look for typical JVM heap settings like '-Xmx2G'
+    match = re.search(r'-Xmx([\d]+[mMgG])', content)
+    if not match:
+        # Also check for patterns like 'heap memory: 2048m'
+        match = re.search(r'heap\s*memory\s*[:=]?\s*([\d.]+\s*[kKmMgG][bB]?)', content)
+
+    if match:
+        heap_value = match.group(1)
+
+    metadata.append({
+        'database': 'configuration',
+        'view': 'heap_memory',
+        'description': heap_value or 'Unknown'
+    })
+
+    return metadata
 
 
 def generate_word_report(metadata: List[Dict[str, str]], output_path: str) -> None:
@@ -33,11 +49,9 @@ def generate_word_report(metadata: List[Dict[str, str]], output_path: str) -> No
 
 
 if __name__ == "__main__":
-    host = os.getenv("DENODO_HOST", "localhost")
-    user = os.getenv("DENODO_USER", "admin")
-    password = os.getenv("DENODO_PASSWORD", "admin")
+    config_file = os.getenv("DENODO_CONFIG_FILE", "config.txt")
     output = "denodo_report.docx"
 
-    metadata = fetch_denodo_metadata(host, user, password)
+    metadata = fetch_denodo_metadata(config_file)
     generate_word_report(metadata, output)
     print(f"Report saved to {output}")
